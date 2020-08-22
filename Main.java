@@ -14,6 +14,6 @@ public class Main {
         String myPath = scanner.nextLine();
 
         ClickMeetingDownload clickMeetingDownloadInactive = new ClickMeetingDownload(apiKey, myPath,false);
-        clickMeetingDownloadInactive.processConferenceRecordings();
+        clickMeetingDownloadInactive.processConferenceRecordings(WhichVideoService.YOUTUBE);
     }
 }
