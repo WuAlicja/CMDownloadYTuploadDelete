@@ -25,10 +25,10 @@ public class ClickMeetingDownload {
     private boolean isActive;
     private WhichVideoService videoService;
 
-    public ClickMeetingDownload(String apiKey, String myPath,boolean isActive) {
+    public ClickMeetingDownload(String apiKey, String myPath, boolean isActive) {
         this.apiKey = apiKey;
         this.myPath = myPath;
-        this.isActive=isActive;
+        this.isActive = isActive;
     }
 
     public void setActive(boolean active) {
@@ -38,68 +38,56 @@ public class ClickMeetingDownload {
 
     public void processConferenceRecordings(WhichVideoService videoService) throws Exception {
         String myUrlActive;
-        if(isActive) {
+        if (isActive) {
             myUrlActive = "https://api.clickmeeting.com/v1/conferences/active?api_key=" + apiKey;
-        }else {
+        } else {
             myUrlActive = "https://api.clickmeeting.com/v1/conferences/inactive?api_key=" + apiKey;
         }
-    try {
-        JSONArray arrayActive = getArrayOfJSONObjects(myUrlActive);
-        int arrayActiveSize = arrayActive.length();
+        try {
+            JSONArray arrayActive = getArrayOfJSONObjects(myUrlActive);
+            int arrayActiveSize = arrayActive.length();
 
-        for (int i = 0; i < arrayActiveSize; i++) {
+            for (int i = 0; i < arrayActiveSize; i++) {
 
-            int roomId = getRoomId(arrayActive, i);
-            String urlRecordings = "https://api.clickmeeting.com/v1/conferences/"
-                    + roomId + "/recordings?api_key=" + apiKey;
-            JSONArray arrayRecordings = getArrayOfJSONObjects(urlRecordings);
+                int roomId = getRoomId(arrayActive, i);
+                String urlRecordings = "https://api.clickmeeting.com/v1/conferences/"
+                        + roomId + "/recordings?api_key=" + apiKey;
+                JSONArray arrayRecordings = getArrayOfJSONObjects(urlRecordings);
 
-            int recorderListSize = getRecorderListSize(arrayActive, i);
+                int recorderListSize = getRecorderListSize(arrayActive, i);
 
-            List<String> urlRecordingActiveList = getRecordingsUrlList(recorderListSize, arrayActive, i);
-            if (urlRecordingActiveList == null)
-                continue;
+                List<String> urlRecordingActiveList = getRecordingsUrlList(recorderListSize, arrayActive, i);
+                if (urlRecordingActiveList == null)
+                    continue;
 
-            for (int k = 0; k < 2; k++) { //zmienic recorderListSize na konkretna liczbe wieksza od 0 jesli nie chcemy ladowac wszystkich video
-                String fileName = "recordingActive" + +i + k + ".mp4";
-                saveRecording(myPath, urlRecordingActiveList, fileName, k + 1);
-                if (videoService.equals(WhichVideoService.YOUTUBE)) {
-                    try {
-                        long recordingFileSize = getRecordingFileSize(arrayRecordings, k);
-                        if (recordingFileSize <= 137438953472L) {
+                for (int k = 0; k < 2; k++) { //zmienic recorderListSize na konkretna liczbe wieksza od 0 jesli nie chcemy ladowac wszystkich video
+                    String fileName = "recordingActive" + +i + k + ".mp4";
+                    saveRecording(myPath, urlRecordingActiveList, fileName, k + 1);
+                    long recordingFileSize = getRecordingFileSize(arrayRecordings, k);
 
-                            Upload upload = new YoutubeUpload();
-                            String response = upload.uploadVideo(myPath, fileName, "Video ze szkolenia " + i + k,
-                                    "Video z ClickMeeting numer " + i + k, "public");
+                    if (videoService.equals(WhichVideoService.YOUTUBE)) {
 
-                            JSONObject responseObject = new JSONObject(response);
+                        Upload upload = new YoutubeUpload();
+                        if(upload.uploadVideo(myPath, fileName, "Video ze szkolenia " + i + k,
+                                "Video z ClickMeeting numer " + i + k, "public", recordingFileSize)) {
 
                             int recordingId = getRecordingId(arrayRecordings, k);
                             deleteRecording(apiKey, roomId, recordingId);
-
-
-                        } else {
-                            System.out.println("Rozmiar tego video jest za duzy, zeby moglo zostac zaladowane na" +
-                                    " Youtube za pomoca tej aplikacji");
                         }
-                    } catch (JSONException e) {
-                        System.out.println("Nie udalo sie zaladowac video na Youtube");
                     }
-
                 }
             }
+        } catch (
+                MalformedURLException e) {
+            System.out.println("URL nie jest prawidlowe");
+        } catch (
+                FileNotFoundException e) {
+            System.out.println("Nie znaleziono pliku");
+        } catch (
+                IOException e) {
+            System.out.println("Nieprawidlowy API key lub Limit quotes dla Twojego konta na YouTube został wyczerpany");
         }
-    }catch (
-    MalformedURLException e) {
-        System.out.println("URL nie jest prawidlowe");
-    } catch (
-    FileNotFoundException e) {
-        System.out.println("Nie znaleziono pliku");
-    } catch (
-    IOException e) {
-        System.out.println("Nieprawidlowy API key lub Limit quotes dla Twojego konta na YouTube został wyczerpany");
     }
-}
 
     private static void deleteRecording(String apiKey, int roomId, int recordingId) throws IOException {
         String deleteRecording = "https://api.clickmeeting.com/v1/conferences/" + roomId +

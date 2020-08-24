@@ -13,7 +13,8 @@ public class VimeoUpload implements Upload{
         this.vimeoToken = vimeoToken;
     }
 
-    public  String uploadVideo(String path, String fileName, String title, String description, String privacyStatus) throws IOException, VimeoException {
+    public  boolean uploadVideo(String path, String fileName, String title, String description,
+                               String privacyStatus,long recordingFileSize) throws IOException, VimeoException {
         Vimeo vimeo = new Vimeo(this.vimeoToken);
 
         //add a video
@@ -35,7 +36,11 @@ public class VimeoUpload implements Upload{
 
         //delete video
         //vimeo.removeVideo(videoEndPoint);
-        return videoEndPoint;
+        if(videoEndPoint.equals("200")) {
+            return true;
+        }else{
+            return false;
+        }
     }
 
 }
